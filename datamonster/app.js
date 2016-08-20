@@ -67,7 +67,7 @@ app.use(function(err, req, res, next) {
 module.exports = app;
 
 routes.get('/findFileNames',function(req,res){
-  console.log("Yes Coming");
+  console.log("File Name Search In All versions!");
   var fileResults={"results":{}}
   var url_parts=url.parse(req.url,true);
   var query=url_parts.query;
@@ -86,17 +86,69 @@ routes.get('/findFileNames',function(req,res){
    })
 });
 
+routes.get('/findFileNamesWithLimits',function(req,res){
+  console.log("File Name Search In All versions!");
+  var fileResults={"results":{}}
+  var url_parts=url.parse(req.url,true);
+  var query=url_parts.query;
+  var searchurl=query.searchurl;
+  var searchurl=req.query['searchurl'];
+  var limitNos=parseInt(req.query['limitTo']);
+   // searchurl=req.params.searchurl.valueOf();
+   // searchurl=decodeURIComponent(searchurl.replace(/\+/g,  " "))
+   console.log(searchurl);
+   db.collection('domains').aggregate(
+    [
+     {$match:{'url':searchurl}},
+     {$sort:{'timestamp':-1}},
+     {$limit:limitNos}
+     ],function(err,docs){
+    if(!err){
+      fileResults.results=docs;
+      res.send(fileResults);
+    }else{
+      res.send("Failure");
+    }
+   })
+});
+
+
+
+routes.get('/findFileNamesByVersion',function(req,res){
+  console.log("File Name Search by Version");
+  var fileResults={"results":{}}
+  var url_parts=url.parse(req.url,true);
+  var query=url_parts.query;
+  var searchurl=query.searchurl;
+  var searchurl=req.query['searchurl'];
+  var version=parseFloat(req.query['version']);
+   // searchurl=req.params.searchurl.valueOf();
+   // searchurl=decodeURIComponent(searchurl.replace(/\+/g,  " "))
+   console.log(searchurl);
+   console.log(version);
+   db.collection('domains').find({'url':searchurl,'timestamp':version}).toArray(function(err,docs){
+    if(!err){
+      fileResults.results=docs;
+      res.send(fileResults);
+    }else{
+      res.send("Failure");
+    }
+   })
+});
+
+
+
 routes.get('/addIndex',function(req,res){
   var url_parts=url.parse(req.url,true);
   var query=url_parts.query;
   var searchurl=req.query['searchurl'];
   var fileName=req.query['filename'];
-  var timestamp=req.query['timestamp'];
+  var timestamp=parseFloat(req.query['timestamp']);
   var dataBuilt={"url":searchurl,"filename":fileName,"timestamp":timestamp};
   
       db.collection('domains').insert(dataBuilt,function(err,docs){
         if(err){
-          res.send("Error while Adding Index ");
+          res.send("Error");
         }else{
           res.send("Success");
           
