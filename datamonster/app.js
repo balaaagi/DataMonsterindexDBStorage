@@ -76,7 +76,7 @@ routes.get('/findFileNames',function(req,res){
    // searchurl=req.params.searchurl.valueOf();
    // searchurl=decodeURIComponent(searchurl.replace(/\+/g,  " "))
    console.log(searchurl);
-   db.collection('domains').find({'url':searchurl}).toArray(function(err,docs){
+   db.collection('domains').find({'url':searchurl}).sort({'timestamp':-1}).toArray(function(err,docs){
     if(!err){
       fileResults.results=docs;
       res.send(fileResults);
