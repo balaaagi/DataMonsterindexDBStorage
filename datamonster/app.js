@@ -16,7 +16,7 @@ var app = express();
 
 
 var db=mongo.db("mongodb://localhost:27017/datamonster",{native_parser:true});
-var searchurl,version;
+var searchurl,version,timestamps;
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -86,6 +86,40 @@ routes.get('/findFileNames',function(req,res){
    })
 });
 
+
+routes.get('/findFileNamesForPurge',function(req,res){
+  console.log("File Name Search In All versions!");
+  var fileResults={"results":{}}
+  var url_parts=url.parse(req.url,true);
+  var query=url_parts.query;
+  var searchurl=query.searchurl;
+  var searchurl=req.query['searchurl'];
+  var toKeep=parseInt(req.query['toKeep']);
+   // searchurl=req.params.searchurl.valueOf();
+   // searchurl=decodeURIComponent(searchurl.replace(/\+/g,  " "))
+   console.log(searchurl);
+   db.collection('domains').find({'url':searchurl}).sort({'timestamp':-1}).toArray(function(err,docs){
+    if(!err){
+
+      fileResults.results=docs;
+      var ss=docs.length;
+      for(var i=toKeep;i<ss;i++){
+        db.collection('domains').remove({'_id':docs[i]._id},function(e,d){
+          if(e)
+            console.log("error");
+          else{
+            console.log("Deleted");
+            fileResults.results=docs;
+          }
+        });
+        console.log(docs[i]);
+      }
+      res.send(fileResults);
+    }else{
+      res.send("Failure");
+    }
+   })
+});
 routes.get('/findFileNamesWithLimits',function(req,res){
   console.log("File Name Search In All versions!");
   var fileResults={"results":{}}
@@ -136,7 +170,31 @@ routes.get('/findFileNamesByVersion',function(req,res){
    })
 });
 
+routes.get('/deleteIndex/:timestamps,:searchurl',function(req,res){
+  var url_parts=url.parse(req.url,true);
+  var query=url_parts.query;
+  searchurl=req.params.searchurl;
+  
+  timestamps=req.params.timestamps;
+  // var nTimeStamps=timestamps.map(function(item){
+  //      return parseFloat(item);
+  // });
+  // var nTimeStamps=[]
+  // for(var i=0; i<timestamps.length;i++) 
+  //   nTimeStamps[i] = parseFloat(timestamps[i]);
+  console.log(timestamps);
+  // console.log(nTimeStamps);
 
+  db.collection('domains').remove({'url':searchurl,'timestamp':{$in:timestamps}},function(err,docs){
+    if(err){
+      res.send(err);
+    }else{
+      res.send(docs);    
+    }
+  });
+  
+
+});
 
 routes.get('/addIndex',function(req,res){
   var url_parts=url.parse(req.url,true);
